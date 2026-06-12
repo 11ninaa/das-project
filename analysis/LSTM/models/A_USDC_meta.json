@@ -1,0 +1,7 @@
+{
+  "symbol": "A",
+  "quote_asset": "USDC",
+  "last_trained_date": "2026-01-06T21:50:25.197348",
+  "lookback": 60,
+  "epochs": 5
+}

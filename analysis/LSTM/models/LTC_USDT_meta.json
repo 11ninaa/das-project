@@ -1,0 +1,7 @@
+{
+  "symbol": "LTC",
+  "quote_asset": "USDT",
+  "last_trained_date": "2025-12-11T21:43:20.909964",
+  "lookback": 60,
+  "epochs": 30
+}

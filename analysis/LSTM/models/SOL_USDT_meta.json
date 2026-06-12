@@ -1,0 +1,7 @@
+{
+  "symbol": "SOL",
+  "quote_asset": "USDT",
+  "last_trained_date": "2025-12-11T21:37:28.196194",
+  "lookback": 60,
+  "epochs": 30
+}

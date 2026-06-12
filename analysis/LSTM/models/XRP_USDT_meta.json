@@ -1,0 +1,7 @@
+{
+  "symbol": "XRP",
+  "quote_asset": "USDT",
+  "last_trained_date": "2025-12-11T21:40:48.279714",
+  "lookback": 60,
+  "epochs": 30
+}

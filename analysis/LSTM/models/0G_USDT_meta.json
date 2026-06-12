@@ -1,0 +1,7 @@
+{
+  "symbol": "0G",
+  "quote_asset": "USDT",
+  "last_trained_date": "2026-01-04T23:27:00.184901",
+  "lookback": 21,
+  "epochs": 10
+}

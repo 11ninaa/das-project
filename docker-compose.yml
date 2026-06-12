@@ -1,0 +1,183 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: crypto-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: example_db
+    ports:
+      - "5431:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crypto-network
+
+  data-ingestion-service:
+    build:
+      context: .
+      dockerfile: microservices/data-ingestion-service/Dockerfile
+    container_name: data-ingestion-service
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=crypto_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - crypto-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  technical-analysis-service:
+    build:
+      context: .
+      dockerfile: microservices/technical-analysis-service/Dockerfile
+    container_name: technical-analysis-service
+    ports:
+      - "8001:8001"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=crypto_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - crypto-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  lstm-prediction-service:
+    build:
+      context: .
+      dockerfile: microservices/lstm-prediction-service/Dockerfile
+    container_name: lstm-prediction-service
+    ports:
+      - "8002:8002"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=crypto_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - crypto-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  onchain-sentiment-service:
+    build:
+      context: .
+      dockerfile: microservices/onchain-sentiment-service/Dockerfile
+    container_name: onchain-sentiment-service
+    ports:
+      - "8003:8003"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=crypto_db
+      - CRYPTOPANIC_API_KEY=${CRYPTOPANIC_API_KEY:-}
+      - NEWSAPI_KEY=${NEWSAPI_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - crypto-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend/demo/demo
+      dockerfile: Dockerfile
+    container_name: crypto-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/crypto_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - MICROSERVICES_TECHNICAL_ANALYSIS_URL=http://technical-analysis-service:8001
+      - MICROSERVICES_LSTM_PREDICTION_URL=http://lstm-prediction-service:8002
+      - MICROSERVICES_ONCHAIN_SENTIMENT_URL=http://onchain-sentiment-service:8003
+      - MICROSERVICES_DATA_INGESTION_URL=http://data-ingestion-service:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      technical-analysis-service:
+        condition: service_healthy
+      lstm-prediction-service:
+        condition: service_healthy
+      onchain-sentiment-service:
+        condition: service_healthy
+      data-ingestion-service:
+        condition: service_healthy
+    networks:
+      - crypto-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend/crypto-app
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:8080
+    container_name: crypto-frontend
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_BASE_URL=/api
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - crypto-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+
+networks:
+  crypto-network:
+    driver: bridge
+
