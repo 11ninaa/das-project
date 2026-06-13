@@ -15,11 +15,11 @@ import os
 
 
 
-DB_HOST = os.getenv("DB_HOST", "das-db-2025-nm.postgres.database.azure.com")
-DB_PORT = int(os.getenv("DB_PORT", "5432"))
-DB_USER = os.getenv("DB_USER", "ninaanak")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "BandWidth/compuTe")
-DB_NAME = os.getenv("DB_NAME", "example_das")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT", 5432))
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
 
 
 
